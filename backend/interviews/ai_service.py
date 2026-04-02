@@ -1,6 +1,6 @@
 """
 AI Service for conducting interviews
-This module handles the AI interviewer logic using OpenAI's GPT models
+This module handles the AI interviewer logic using Google Gemini API
 """
 import os
 from typing import List, Dict, Optional
@@ -9,33 +9,41 @@ import logging
 logger = logging.getLogger(__name__)
 
 try:
-    from openai import OpenAI
-    OPENAI_AVAILABLE = True
+    from google import genai
+    from google.genai import types
+    GEMINI_AVAILABLE = True
 except ImportError:
-    OPENAI_AVAILABLE = False
-    logger.warning("OpenAI library not installed. AI features will be limited.")
+    GEMINI_AVAILABLE = False
+    logger.warning("Google Gemini library not installed. AI features will be limited.")
 
 class AIInterviewer:
     """
-    AI Interviewer class that handles conversation with students
+    AI Interviewer class using Google Gemini API
     """
     
     def __init__(self, api_key: Optional[str] = None):
         """
-        Initialize the AI Interviewer
+        Initialize the Gemini AI Interviewer
         
         Args:
-            api_key: OpenAI API key (optional, will use environment variable if not provided)
+            api_key: Gemini API key (optional, will use environment variable if not provided)
         """
-        if not OPENAI_AVAILABLE:
-            raise ImportError("OpenAI library is required. Install with: pip install openai")
+        if not GEMINI_AVAILABLE:
+            raise ImportError("Google Gemini library is required. Install with: pip install google-genai")
         
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
+        self.api_key = api_key or os.getenv('GEMINI_API_KEY')
         if not self.api_key:
-            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable or pass it to constructor.")
+            raise ValueError("Gemini API key is required. Set GEMINI_API_KEY environment variable or pass it to constructor.")
         
-        self.client = OpenAI(api_key=self.api_key)
+        # Create Gemini client
+        self.client = genai.Client(api_key=self.api_key)
+        
+        # Use the stable alias 'gemini-flash-latest' which works for all tiers
+        self.model_name = 'gemini-flash-latest'
+        
+        self.chat = None
         self.conversation_history: List[Dict[str, str]] = []
+        self.system_prompt = ""
     
     def initialize_interview(self, questions: List[str], context: Dict[str, str] = None) -> str:
         """
@@ -49,15 +57,16 @@ class AIInterviewer:
             Opening message from the AI interviewer
         """
         # Build the system prompt
-        system_prompt = self._build_system_prompt(questions, context)
+        self.system_prompt = self._build_system_prompt(questions, context)
         
         # Reset conversation history
-        self.conversation_history = [
-            {"role": "system", "content": system_prompt}
-        ]
+        self.conversation_history = []
+        
+        # Initialize chat (we'll use stateless approach with new API)
+        self.chat = True  # Flag to indicate chat is initialized
         
         # Get the opening message
-        opening_message = self.get_ai_response("Start the interview with a warm greeting.")
+        opening_message = self._send_message("Start the interview with a warm greeting.")
         
         return opening_message
     
@@ -97,6 +106,63 @@ IMPORTANT RULES:
         
         return prompt
     
+    def _send_message(self, message: str) -> str:
+        """
+        Send a message to Gemini and get response
+        
+        Args:
+            message: The message to send
+        
+        Returns:
+            AI's response
+        """
+        try:
+            # Build the full conversation history for context
+            messages = []
+            
+            # Add system instruction as first message
+            if not self.conversation_history:
+                messages.append(types.Content(
+                    role='user',
+                    parts=[types.Part(text=f"{self.system_prompt}\n\n{message}")]
+                ))
+            else:
+                # Add previous conversation
+                for msg in self.conversation_history:
+                    messages.append(types.Content(
+                        role=msg['role'],
+                        parts=[types.Part(text=msg['content'])]
+                    ))
+                # Add new message
+                messages.append(types.Content(
+                    role='user',
+                    parts=[types.Part(text=message)]
+                ))
+            
+            # Generate response
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=messages
+            )
+            
+            ai_message = response.text
+            
+            # Store in conversation history
+            self.conversation_history.append({
+                "role": "user",
+                "content": message
+            })
+            self.conversation_history.append({
+                "role": "model",
+                "content": ai_message
+            })
+            
+            return ai_message
+        
+        except Exception as e:
+            logger.error(f"Error getting Gemini response: {str(e)}")
+            raise Exception(f"AI service error: {str(e)}")
+    
     def get_ai_response(self, student_response: str = None) -> str:
         """
         Get AI's response to student's answer
@@ -107,34 +173,13 @@ IMPORTANT RULES:
         Returns:
             AI's next question or response
         """
+        if not self.chat:
+            raise Exception("Interview not initialized. Call initialize_interview first.")
+        
         if student_response:
-            self.conversation_history.append({
-                "role": "user",
-                "content": student_response
-            })
-        
-        try:
-            # Call OpenAI API
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # Using cost-effective model, can upgrade to gpt-4 if needed
-                messages=self.conversation_history,
-                temperature=0.7,
-                max_tokens=300
-            )
-            
-            ai_message = response.choices[0].message.content
-            
-            # Add AI's response to history
-            self.conversation_history.append({
-                "role": "assistant",
-                "content": ai_message
-            })
-            
-            return ai_message
-        
-        except Exception as e:
-            logger.error(f"Error getting AI response: {str(e)}")
-            raise Exception(f"AI service error: {str(e)}")
+            return self._send_message(student_response)
+        else:
+            return self._send_message("Please ask the next question.")
     
     def end_interview(self) -> str:
         """
@@ -143,14 +188,12 @@ IMPORTANT RULES:
         Returns:
             Closing message from the AI interviewer
         """
-        closing_prompt = "The interview is now complete. Thank the candidate and provide a professional closing statement."
+        if not self.chat:
+            return "Thank you for your time."
         
-        self.conversation_history.append({
-            "role": "user",
-            "content": closing_prompt
-        })
-        
-        closing_message = self.get_ai_response()
+        closing_message = self._send_message(
+            "The interview is now complete. Thank the candidate and provide a professional closing statement."
+        )
         
         return closing_message
     

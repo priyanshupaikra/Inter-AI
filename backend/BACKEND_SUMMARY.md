@@ -100,11 +100,12 @@ All credentials are stored securely in `.env` file.
 ## 🤖 AI Configuration
 
 ### **Gemini API** (Recommended)
-- **Status**: Configured and ready
+- **Status**: Configured and ready ✅
+- **Library**: `google-genai` (v0.3.0+)
+- **Model**: `gemini-flash-latest` (Stable)
 - **Setup**: Add `GEMINI_API_KEY` to `.env`
-- **Cost**: FREE tier (15 requests/minute)
+- **Cost**: FREE tier available
 - **Performance**: Fast and conversational
-- **Documentation**: See `GEMINI_SETUP.md`
 
 ### **OpenAI API** (Alternative)
 - **Status**: Configured as fallback

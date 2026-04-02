@@ -1,0 +1,144 @@
+.controls-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding-top: 1rem;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* End Interview Button */
+.end-interview-group {
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.end-interview-btn {
+    background-color: var(--color-danger);
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: var(--radius-full);
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.2s, background-color 0.2s;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.end-interview-btn:hover {
+    transform: translateY(-2px);
+    background-color: #dc2626;
+}
+
+.pulse-circle {
+    width: 20px;
+    height: 20px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inner-pulse {
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.5);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.practice-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+/* Vibe Meter */
+.vibe-group {
+    gap: 1rem;
+}
+
+.vibe-meter {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #bef264;
+    /* Lime green */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+}
+
+.vibe-icon-down {
+    font-weight: bold;
+}
+
+.vibe-text {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+}
+
+.vibe-label {
+    font-weight: 600;
+    color: var(--color-header);
+}
+
+.vibe-status {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+}
+
+/* Compliance Footer */
+.compliance-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 1.5rem;
+}
+
+.gdpr-pill {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    border: 1px solid #cbd5e1;
+    padding: 0.4rem 1.2rem;
+    border-radius: var(--radius-full);
+}
+
+.encryption-pill {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.shield-icon {
+    color: var(--color-primary);
+}

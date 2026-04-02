@@ -16,9 +16,9 @@ pydub==0.25.1
 PyAudio==0.2.14  # Optional, for better audio support
 
 # AI/NLP Libraries
-google-generativeai==0.8.3  # For Gemini AI interviewer (recommended)
-openai==1.59.6  # For GPT-based AI interviewer (alternative)
-anthropic==0.43.1  # Alternative AI provider
+google-genai==0.3.0  # Gemini AI (Primary - FREE tier available!)
+# openai==1.59.6  # OpenAI GPT (Optional alternative - Uncomment if needed)
+# anthropic==0.43.1  # Claude AI (Optional alternative)
 
 # Utilities
 python-dotenv==1.0.1

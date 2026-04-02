@@ -23,13 +23,12 @@ GEMINI_API_KEY=your_api_key_here
 ```
 
 ## Step 3: Install Gemini Library
-
 ```bash
 # Make sure virtual environment is activated
 source venv/Scripts/activate
 
-# Install the library
-pip install google-generativeai
+# Install the NEW library
+pip install google-genai
 ```
 
 ## Step 4: Test It!

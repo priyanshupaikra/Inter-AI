@@ -121,15 +121,21 @@ def test_gemini_api():
         return False
     
     try:
-        import google.generativeai as genai
-        print_success("google-generativeai library installed")
+        from google import genai
+        from google.genai import types
+        print_success("google-genai library installed")
         
         # Configure and test
-        genai.configure(api_key=gemini_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        client = genai.Client(api_key=gemini_key)
         
         print_info("Testing Gemini API connection...")
-        response = model.generate_content("Say 'Hello' in one word")
+        response = client.models.generate_content(
+            model='gemini-flash-latest',
+            contents=types.Content(
+                role='user',
+                parts=[types.Part(text="Say 'Hello' in one word")]
+            )
+        )
         
         if response and response.text:
             print_success(f"Gemini API: WORKING")
@@ -140,8 +146,8 @@ def test_gemini_api():
             return False
             
     except ImportError:
-        print_error("google-generativeai not installed")
-        print_info("Install with: pip install google-generativeai")
+        print_error("google-genai not installed")
+        print_info("Install with: pip install google-genai")
         return False
     except Exception as e:
         print_error(f"Gemini API test failed: {str(e)}")

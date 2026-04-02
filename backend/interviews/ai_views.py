@@ -4,8 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
 from .models import InterviewSession, Question, Conversation
-from .gemini_service import GeminiAIInterviewer, MockAIInterviewer
 from .ai_service import AIInterviewer
+from .gemini_service import MockAIInterviewer
 import logging
 import os
 
@@ -79,31 +79,21 @@ class AIInterviewView(APIView):
                 'duration': f"{session.duration_minutes} minutes"
             }
             
-            # Try to use AI interviewer in order of preference:
-            # 1. Gemini (if GEMINI_API_KEY is set)
-            # 2. OpenAI (if OPENAI_API_KEY is set)
-            # 3. Mock (fallback - no API key needed)
+            # Try to use Gemini AI interviewer
+            # Falls back to Mock AI if no API key configured
             ai_interviewer = None
             
-            # Try Gemini first
             if os.getenv('GEMINI_API_KEY'):
                 try:
-                    ai_interviewer = GeminiAIInterviewer()
-                    logger.info("Using Gemini AI interviewer")
+                    ai_interviewer = AIInterviewer()  # Now uses Gemini
+                    logger.info("✅ Using Gemini AI interviewer")
                 except Exception as e:
                     logger.warning(f"Failed to initialize Gemini AI: {str(e)}")
-            
-            # Try OpenAI if Gemini failed or not configured
-            if not ai_interviewer and os.getenv('OPENAI_API_KEY'):
-                try:
-                    ai_interviewer = AIInterviewer()
-                    logger.info("Using OpenAI interviewer")
-                except Exception as e:
-                    logger.warning(f"Failed to initialize OpenAI: {str(e)}")
-            
-            # Fall back to Mock if no AI is available
-            if not ai_interviewer:
-                logger.info("Using Mock AI interviewer (no API keys configured)")
+                    logger.info("Falling back to Mock AI interviewer")
+                    ai_interviewer = MockAIInterviewer()
+            else:
+                logger.info("⚠️ GEMINI_API_KEY not set. Using Mock AI interviewer")
+                logger.info("To enable real AI: Add GEMINI_API_KEY to .env file")
                 ai_interviewer = MockAIInterviewer()
             
             # Initialize the interview

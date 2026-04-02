@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .test-item {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #ddd;
+            background: #f9f9f9;
+        }
+
+        .test-item.success {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .test-item.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .test-item.pending {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+
+        button:hover {
+            background: #059669;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        pre {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+
+        .status {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>🔌 Backend Connection Test</h1>
+        <p>This page tests the connection between your frontend and backend.</p>
+
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000/api';
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+        }
+
+        function addTestResult(title, status, message, data = null) {
+            const resultsDiv = document.getElementById('test-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = `test-item ${status}`;
+
+            let content = `
+                <strong>${title}</strong><br>
+                <span class="status">${status.toUpperCase()}</span>
+                <span>${message}</span>
+            `;
+
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+
+            testDiv.innerHTML = content;
+            resultsDiv.appendChild(testDiv);
+        }
+
+        async function testBackendConnection() {
+            addTestResult(
+                '1. Backend Reachability',
+                'pending',
+                'Testing connection to ' + API_BASE_URL + '...',
+                null
+            );
+
+            try {
+                const response = await fetch(API_BASE_URL + '/');
+                if (response.ok) {
+                    const data = await response.json();
+                    addTestResult(
+                        '1. Backend Reachability',
+                        'success',
+                        'Successfully connected to backend API',
+                        data
+                    );
+                    return true;
+                } else {
+                    addTestResult(
+                        '1. Backend Reachability',
+                        'error',
+                        `Backend responded with status ${response.status}`,
+                        await response.text()
+                    );
+                    return false;
+                }
+            } catch (error) {
+                addTestResult(
+                    '1. Backend Reachability',
+                    'error',
+                    'Failed to connect to backend. Is it running on port 8000?',
+                    { error: error.message }
+                );
+                return false;
+            }
+        }
+
+        async function testCreateStudent() {
+            addTestResult(
+                '2. Create Student API',
+                'pending',
+                'Testing POST /api/students/...'
+            );
+
+            try {
+                const testEmail = 'test_' + Date.now() + '@example.com';
+                const response = await fetch(API_BASE_URL + '/students/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        email: testEmail
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addTestResult(
+                        '2. Create Student API',
+                        'success',
+                        'Successfully created student',
+                        data
+                    );
+                    return data;
+                } else {
+                    const error = await response.json();
+                    addTestResult(
+                        '2. Create Student API',
+                        'error',
+                        'Failed to create student',
+                        error
+                    );
+                    return null;
+                }
+            } catch (error) {
+                addTestResult(
+                    '2. Create Student API',
+                    'error',
+                    'Request failed',
+                    { error: error.message }
+                );
+                return null;
+            }
+        }
+
+        async function testCreateInterviewer() {
+            addTestResult(
+                '3. Create Interviewer API',
+                'pending',
+                'Testing POST /api/interviewers/...'
+            );
+
+            try {
+                const response = await fetch(API_BASE_URL + '/interviewers/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'AI Interviewer',
+                        email: 'ai@test.com'
+                    })
+                });
+
+                if (response.ok || response.status === 400) {
+                    // 400 might mean interviewer already exists, which is OK
+                    const data = await response.json();
+                    addTestResult(
+                        '3. Create Interviewer API',
+                        response.ok ? 'success' : 'pending',
+                        response.ok ? 'Successfully created interviewer' : 'Interviewer may already exist (this is OK)',
+                        data
+                    );
+                    return response.ok ? data : { id: 1 };  // Assume ID 1 if exists
+                } else {
+                    const error = await response.json();
+                    addTestResult(
+                        '3. Create Interviewer API',
+                        'error',
+                        'Failed to get/create interviewer',
+                        error
+                    );
+                    return null;
+                }
+            } catch (error) {
+                addTestResult(
+                    '3. Create Interviewer API',
+                    'error',
+                    'Request failed',
+                    { error: error.message }
+                );
+                return null;
+            }
+        }
+
+        async function testCreateSession(studentId, interviewerId) {
+            if (!studentId || !interviewerId) {
+                addTestResult(
+                    '4. Create Session API',
+                    'error',
+                    'Missing student or interviewer ID'
+                );
+                return null;
+            }
+
+            addTestResult(
+                '4. Create Session API',
+                'pending',
+                'Testing POST /api/sessions/...'
+            );
+
+            try {
+                const response = await fetch(API_BASE_URL + '/sessions/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: 'Test Interview',
+                        interviewer: interviewerId,
+                        student: studentId,
+                        duration_minutes: 30,
+                        scheduled_at: new Date().toISOString(),
+                        description: 'Connection test session'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addTestResult(
+                        '4. Create Session API',
+                        'success',
+                        'Successfully created interview session',
+                        data
+                    );
+                    return data;
+                } else {
+                    const error = await response.json();
+                    addTestResult(
+                        '4. Create Session API',
+                        'error',
+                        'Failed to create session',
+                        error
+                    );
+                    return null;
+                }
+            } catch (error) {
+                addTestResult(
+                    '4. Create Session API',
+                    'error',
+                    'Request failed',
+                    { error: error.message }
+                );
+                return null;
+            }
+        }
+
+        async function testAIInterview(sessionUUID) {
+            if (!sessionUUID) {
+                addTestResult(
+                    '5. AI Interview API',
+                    'error',
+                    'Missing session UUID'
+                );
+                return;
+            }
+
+            addTestResult(
+                '5. AI Interview API',
+                'pending',
+                'Testing POST /api/ai-interview/...'
+            );
+
+            try {
+                const response = await fetch(API_BASE_URL + '/ai-interview/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'initialize',
+                        session_id: sessionUUID
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addTestResult(
+                        '5. AI Interview API',
+                        'success',
+                        'AI Interview initialized successfully! First question received.',
+                        data
+                    );
+                } else {
+                    const error = await response.json();
+                    addTestResult(
+                        '5. AI Interview API',
+                        'error',
+                        'Failed to initialize AI interview. Check your GOOGLE_AI_API_KEY in backend/.env',
+                        error
+                    );
+                }
+            } catch (error) {
+                addTestResult(
+                    '5. AI Interview API',
+                    'error',
+                    'Request failed',
+                    { error: error.message }
+                );
+            }
+        }
+
+        async function runAllTests() {
+            clearResults();
+
+            addTestResult(
+                'Test Suite',
+                'pending',
+                'Running all connection tests...'
+            );
+
+            // Test 1: Backend connectivity
+            const backendOk = await testBackendConnection();
+            if (!backendOk) {
+                addTestResult(
+                    'Test Suite',
+                    'error',
+                    'Stopping tests - backend is not reachable'
+                );
+                return;
+            }
+
+            // Test 2: Create student
+            const student = await testCreateStudent();
+
+            // Test 3: Create interviewer
+            const interviewer = await testCreateInterviewer();
+
+            // Test 4: Create session
+            if (student && interviewer) {
+                const session = await testCreateSession(student.id, interviewer.id);
+
+                // Test 5: Initialize AI
+                if (session) {
+                    await testAIInterview(session.session_id);
+                }
+            }
+
+            addTestResult(
+                'Test Suite',
+                'success',
+                'All tests completed! Check results above.'
+            );
+        }
+
+        // Auto-run on page load
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 500);
+        });
+    </script>
+</body>
+
+</html>

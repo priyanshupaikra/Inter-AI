@@ -8,7 +8,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False

@@ -85,19 +85,30 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Use SQLite for local development (no network required)
+# To use PostgreSQL, uncomment the PostgreSQL section and comment out SQLite
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "neondb"),
-        "USER": os.getenv("DB_USER", "neondb_owner"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "ep-young-queen-a1pyg8k4-pooler.ap-southeast-1.aws.neon.tech"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-        "OPTIONS": {
-            "sslmode": "require",
-        },
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+# PostgreSQL Configuration (for production/remote database)
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": os.getenv("DB_NAME", "neondb"),
+#         "USER": os.getenv("DB_USER", "neondb_owner"),
+#         "PASSWORD": os.getenv("DB_PASSWORD", ""),
+#         "HOST": os.getenv("DB_HOST", "ep-young-queen-a1pyg8k4-pooler.ap-southeast-1.aws.neon.tech"),
+#         "PORT": os.getenv("DB_PORT", "5432"),
+#         "OPTIONS": {
+#             "sslmode": "require",
+#         },
+#     }
+# }
+
 
 
 # Password validation
